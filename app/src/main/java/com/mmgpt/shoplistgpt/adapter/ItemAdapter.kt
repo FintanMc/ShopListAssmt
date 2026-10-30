@@ -1,6 +1,8 @@
 package com.mmgpt.shoplistgpt.adapter
 
+import android.view.GestureDetector
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.graphics.Typeface
@@ -17,7 +19,8 @@ class ItemAdapter(
     private val onAction: (ShoppingItem, Action) -> Unit,
     private val mode: Mode = Mode.SHOP,
     private val dragStart: ((RecyclerView.ViewHolder) -> Unit)? = null,
-    private val onAdd: ((Int, String) -> Unit)? = null
+    private val onAdd: ((Int, String) -> Unit)? = null,
+    private val onDoubleClick: ((ShoppingItem, Int) -> Unit)? = null
 ) : ListAdapter<ShoppingItem, RecyclerView.ViewHolder>(DIFF_CALLBACK) {
 
     init {
@@ -103,7 +106,22 @@ class ItemAdapter(
                 val color = ContextCompat.getColor(binding.root.context, com.mmgpt.shoplistgpt.R.color.list_item_text)
                 binding.tvName.setTextColor(color)
                 binding.root.strokeWidth = 0
+
+                val gestureDetector = GestureDetector(binding.root.context, object : GestureDetector.SimpleOnGestureListener() {
+                    override fun onDoubleTap(e: MotionEvent): Boolean {
+                        val pos = bindingAdapterPosition
+                        if (pos != RecyclerView.NO_POSITION) {
+                            onDoubleClick?.invoke(item, pos)
+                        }
+                        return true
+                    }
+                })
+                binding.root.setOnTouchListener { _, event ->
+                    gestureDetector.onTouchEvent(event)
+                    false
+                }
             } else {
+                binding.root.setOnTouchListener(null)
                 binding.chkPurchased.isEnabled = true
                 binding.btnFlag.isEnabled = mode == Mode.SHOP
                 binding.tvName.setTypeface(null, Typeface.NORMAL)
